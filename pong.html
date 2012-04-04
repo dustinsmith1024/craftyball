@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<head>	
+  <script type="text/javascript" src="crafty47.js"></script>
+	<style>
+		body, html { margin:0; padding: 0; overflow:hidden; font-family:Arial; font-size:20px }
+		#cr-stage { color:white }
+	</style>
+</head>
+<body>
+<script type="text/javascript">
+	Crafty.init(600, 300);
+	Crafty.background(' #EDC393');
+  Crafty.sprite(30, 'x.png', {
+        offense: [0,0]
+        });
+
+Crafty.c("Team", {
+    players: [],
+    init: function(){
+      console.log('init the team!');
+      this.requires('2D, Canvas, Mouse');
+      for (var c = 0; c < 5; c++) {
+      console.log(c);
+      var player = Crafty.e("2D, Canvas, offense, Player")
+      .makePlayer(10, 50 * c, 20, 20, c).bind('StopDrag', function(d){console.log(d, 'just one!');});
+        this.players.push(player);
+        }
+      }
+    });
+
+Crafty.c("handle", {
+init: function(){
+    this.requires('2D', 'Canvas', 'Draggable', 'Color');
+    this.bind('Dragging', function(d) {
+      console.log('drag handle!');
+      this.trigger('handle-drag', d.pos);
+      });
+    },
+
+  });
+
+Crafty.c("trace", {
+        init: function(){
+          this.requires('2D, Canvas');
+          this.bind('Draw', function(d) {
+              this._drawFinal(d.ctx, d.pos);
+              });
+          this.bind('trace-middle', function(data) {
+              Crafty.canvas.context.fillRect(data.x - 5, data.y - 5, 20,20);
+              });
+          this.bind('handle-drag', function(pos) {
+            console.log('handle drag', pos);
+            this.quadX = pos.x;
+            this.quadY = pos.y;
+              });
+          this.curve = false;
+          this.quadX = false;
+          this.quadY = false;
+        },
+
+        _drawFinal: function(ctx, pos) {
+          ctx.beginPath();
+          ctx.moveTo(this.initX,this.initY);
+          //bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y)
+          //ctx.bezierCurveTo(75,37,70,25,50,25);
+          //ctx.quadraticCurveTo(25,25,25,62.5);
+          //quadraticCurveTo(cp1x, cp1y, x, y)
+          var x = pos._x;
+          var y = pos._y;
+          ctx.lineWidth = 4;
+          if (this.quadX === false) {
+            ctx.lineTo(x,y);
+          }else { 
+           console.log(this.quadX); 
+            //ctx.bezierCurveTo(x-60, y-10, x-30, y-40, x, y);
+            ctx.quadraticCurveTo(this.quadX, this.quadY, x, y);
+            //ctx.closePath();
+          }
+          this.endX = x;
+          this.endY = y;
+          ctx.stroke();
+       }
+
+});
+
+Crafty.c("Player", {
+        init: function(){
+        console.log('init player!');
+        this.requires('2D, Canvas, Mouse, Draggable');
+        this.bind('Click', function() {
+          console.log("activate!")
+          }
+          )
+        .bind('StartDrag', function(d){
+        })
+        .bind('StopDrag', function(d){
+          var x = Math.abs((this.initX + d.clientX) / 2) - 5;
+          var y = Math.abs((this.initY + d.clientY) / 2) - 5;
+          that = this;
+          Crafty.e("2D, Canvas, Color, Draggable").attr({x: x, y: y, w: 20, h: 20, color: 'black' }).bind('Dragging', function(d) {
+            //Crafty.trigger('handle-drag', d);
+            //console.log(d);
+            var pos = {ctx: Crafty.canvas.context, quad: { qX: d.clientX, qY: d.clientY, curve: true}};
+            //that._draw(Crafty.canvas.context, pos);
+            that.trigger('Draw', {curve: true, ctx:Crafty.canvas.context, pos:pos});
+           });
+          //Crafty.trigger('trace-middle', { x: Math.abs((this.initX + d.clientX) / 2), y: Math.abs((this.initY + d.clientY) / 2) - 10})
+        })
+        .bind('Draw', function(d, pos) {
+            //console.log('D:', d, 'pos:', pos);
+          if (d.curve){
+          console.log('draw! curve!');
+            this._draw(d.ctx, d.pos);
+            }else{
+            console.log('huh');
+            this._draw(d.ctx, d.pos);
+          }
+        })
+        .bind('Dragging', function(d) {
+        });
+        },
+        makePlayer: function(x, y, w, h, id){
+          this.attr({x: x, y: y, w: w, h: h});
+          this.id = id;
+          this.initX = x;
+          this.initY = y;
+          this.endX = x;
+          this.endY = y;
+          this.dragging = false;
+          return this;
+                    },
+
+_draw: function(ctx, pos) {
+         //console.log(ctx, pos);
+          ctx.beginPath();
+          ctx.moveTo(this.initX,this.initY);
+          //bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y)
+          //ctx.bezierCurveTo(75,37,70,25,50,25);
+          //ctx.quadraticCurveTo(25,25,25,62.5);
+          //quadraticCurveTo(cp1x, cp1y, x, y)
+          var x = pos._x ? pos._x : this.endX;
+          var y = pos._y ? pos._y : this.endY;
+          ctx.lineWidth = 4;
+          if (!pos.quad) {
+            ctx.lineTo(x,y);
+          }else { 
+           console.log(pos.quadX); 
+            //ctx.bezierCurveTo(x-60, y-10, x-30, y-40, x, y);
+            ctx.quadraticCurveTo(pos.quad.qX, pos.quad.qY, x, y);
+            //ctx.closePath();
+          }
+          this.endX = x;
+          this.endY = y;
+          ctx.stroke();
+               }
+
+      });
+
+	Crafty.scene("game", function() {
+      //Paddles
+
+
+		Crafty.e("2D, Canvas, Team");
+      
+      //.onHit('Defense', function(){console.log('hit it!');})
+  /* 
+    Crafty.e("Paddle, 2D, DOM, Color, Multiway")
+			.color('rgb(0,255,0)')
+			.attr({ x: 580, y: 100, w: 10, h: 100 })
+			.multiway(4, { UP_ARROW: -90, DOWN_ARROW: 90 });
+*/
+      //Ball
+      /*
+		Crafty.e("2D, DOM, Color, Collision")
+			.color('rgb(0,0,255)')
+			.attr({ x: 300, y: 150, w: 10, h: 10, 
+					dX: Crafty.math.randomInt(2, 5), 
+					dY: Crafty.math.randomInt(2, 5) })
+			.bind('EnterFrame', function () {
+				//hit floor or roof
+				if (this.y <= 0 || this.y >= 290)
+					this.dY *= -1;
+
+				if (this.x > 600) {
+					this.x = 300;
+					Crafty("LeftPoints").each(function () { 
+						this.text(++this.points + " Points") });
+				}
+				if (this.x < 10) {
+					this.x = 300;
+					Crafty("RightPoints").each(function () { 
+						this.text(++this.points + " Points") });
+				}
+
+				this.x += this.dX;
+				this.y += this.dY;
+			})
+			.onHit('Paddle', function () {
+			this.dX *= -1;
+		});
+      */
+		//Score boards
+		Crafty.e("LeftPoints, DOM, 2D, Text")
+			.attr({ x: 20, y: 20, w: 100, h: 20, points: 0 })
+			.text("0 Points");
+		Crafty.e("RightPoints, DOM, 2D, Text")
+			.attr({ x: 515, y: 20, w: 100, h: 20, points: 0 })
+			.text("0 Points");
+	})
+	Crafty.e("2D, Canvas, Text").attr({x:250, y:130, w: 300 }).text("Welcome to the bball play maker.");
+	Crafty.e("2D, Canvas, Mouse").attr({x:0, y:0, h:300, w:600 }).bind("Click", function() { Crafty.scene("save");})
+	Crafty.e("2D, Canvas, Mouse").attr({x:0, y:0, h:300, w:600 }).bind("Click", function() { Crafty.scene("game");})
+</script>
+
+</body>
+</html>

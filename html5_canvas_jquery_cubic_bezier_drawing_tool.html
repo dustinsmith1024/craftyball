@@ -1,0 +1,64 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>HTML5 Canvas, jQuery Cubic Bezier Drawing Tool</title>
+	<script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
+	<!--[if IE]><script type="text/javascript" src="excanvas.js"></script><![endif]-->
+	<script type="text/javascript">
+		var canvas, context, ctrlpts = new Array();
+		$(function() {
+			canvas = document.getElementById("cubic_bezier");
+			context = canvas.getContext("2d");
+			$("#cubic_bezier").mousedown(function(evt) {
+				var xpos = evt.pageX-$(this).offset().left;
+				var ypos = evt.pageY-$(this).offset().top;
+				if (ctrlpts.length <= 6) {
+					ctrlpts[ctrlpts.length] = xpos;
+					ctrlpts[ctrlpts.length] = ypos;
+					context.fillStyle = "#0000ff";
+					context.fillRect(ctrlpts[ctrlpts.length-2]-2, ctrlpts[ctrlpts.length-1]-2, 4, 4);
+					if (ctrlpts.length == 8)
+						draw_cubic_bezier();
+				}
+				else {
+					for (i = 0; i < 8; i+=2)
+						if (xpos > ctrlpts[i]-3 && xpos < ctrlpts[i]+3 && ypos > ctrlpts[i+1]-3 && ypos < ctrlpts[i+1]+3) {
+							$(this).bind("mousemove", {index: i}, move_ctrlpts);
+							break;
+						}
+				}
+			});
+			$("#cubic_bezier").mouseup(function() {
+				$(this).unbind("mousemove", move_ctrlpts);
+			});
+		});
+		function draw_cubic_bezier() {
+			context.beginPath();
+			context.moveTo(ctrlpts[0], ctrlpts[1]);
+			context.lineTo(ctrlpts[2], ctrlpts[3]);
+			context.lineTo(ctrlpts[4], ctrlpts[5]);
+			context.lineTo(ctrlpts[6], ctrlpts[7]);
+			context.strokeStyle = "#00ff00";
+			context.stroke();
+			context.beginPath();
+			context.moveTo(ctrlpts[0], ctrlpts[1]);
+			context.bezierCurveTo(ctrlpts[2], ctrlpts[3], ctrlpts[4], ctrlpts[5], ctrlpts[6], ctrlpts[7]);
+			context.strokeStyle = "#ff0000";
+			context.stroke();
+		}
+		function move_ctrlpts(evt) {
+			ctrlpts[evt.data.index] = evt.pageX-$(this).offset().left;
+			ctrlpts[evt.data.index+1] = evt.pageY-$(this).offset().top;
+			canvas.width = canvas.width;
+			context.fillStyle = "#0000ff";
+			for (i = 0; i < 8; i+=2) 
+				context.fillRect(ctrlpts[i]-2, ctrlpts[i+1]-2, 4, 4);
+			draw_cubic_bezier();
+		}
+	</script>
+</head>
+<body>
+    <canvas id="cubic_bezier" width="600" height="400" style="border: 1px solid #777777;"></canvas>
+</body>
+</html>
